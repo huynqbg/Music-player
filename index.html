@@ -1,0 +1,363 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music player</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css" integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w==" crossorigin="anonymous" />
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./assets/css/style.css">
+</head>
+<body>
+    <div class="player">
+        <!-- Dashboard -->
+        <div class="dashboard">
+          <!-- Header -->
+          <header>
+            <h4>Now playing:</h4>
+            <h2>String 57th & 9th</h2>
+          </header>
+      
+          <!-- CD -->
+          <div class="cd">
+            <div class="cd-thumb" style="background-image: url('https://i.ytimg.com/vi/jTLhQf5KJSc/maxresdefault.jpg')">
+            </div>
+          </div>
+      
+          <!-- Control -->
+          <div class="control">
+            <div class="btn btn-repeat">
+              <i class="fas fa-redo"></i>
+            </div>
+            <div class="btn btn-prev">
+              <i class="fas fa-step-backward"></i>
+            </div>
+            <div class="btn btn-toggle-play">
+              <i class="fas fa-pause icon-pause"></i>
+              <i class="fas fa-play icon-play"></i>
+            </div>
+            <div class="btn btn-next">
+              <i class="fas fa-step-forward"></i>
+            </div>
+            <div class="btn btn-random">
+              <i class="fas fa-random"></i>
+            </div>
+          </div>
+      
+          <input id="progress" class="progress" type="range" value="0" step="1" min="0" max="100">
+      
+          <audio id="audio" src=""></audio>
+        </div>
+      
+        <!-- Playlist -->
+        <div class="playlist">
+         
+        </div>
+    </div>
+    <script>
+        const $ = document.querySelector.bind(document)
+        const $$ = document.querySelectorAll.bind(document)
+        
+        const player = $('.player')
+        const cd = $('.cd')
+        const heading = $('header h2')
+        const cdThumb = $('.cd-thumb')
+        const audio = $('#audio')
+        const playBtn = $('.btn-toggle-play')
+        const progress = $('#progress')
+        const nextBtn = $('.btn-next')
+        const prevBtn = $('.btn-prev')
+        const randomBtn = $('.btn-random')
+        const repeatBtn = $('.btn-repeat')
+        const playlist = $('.playlist')
+
+
+        const app = {
+          currentIndex: 0,
+          isPlaying: false,
+          isRandom: false,
+          isRepeat: false,
+          songs: [
+            {
+              name: 'Nevada',
+              singer: 'Vicetone',
+              path: './assets/music/Nevada.mp3',
+              image: './assets/images/nevada.jpg'
+            },
+            {
+              name: 'Summertime',
+              singer: 'K-391',
+              path: './assets/music/Summertime Sunshine.mp3',
+              image: './assets/images/summertime.jpg'
+            },
+            {
+              name: 'Monody',
+              singer: 'TheFatRat',
+              path: './assets/music/Monody.mp3',
+              image: './assets/images/monody.jpg'
+            },
+            {
+              name: 'Attention',
+              singer: 'charlie Puth',
+              path: './assets/music/Attention.mp3',
+              image: './assets/images/attention.jpg'
+            },
+            {
+              name: 'Nova',
+              singer: 'Ahrix',
+              path: './assets/music/Ahrix  Nova.mp3',
+              image: './assets/images/nova.jpg'
+            },
+            {
+              name: 'DiESi Remix',
+              singer: 'China',
+              path: './assets/music/DiESi Remix.mp3',
+              image: './assets/images/DiESi Remix.jpg'
+            },
+            {
+              name: 'Shape of You',
+              singer: 'Ed Sheeran',
+              path: './assets/music/Shape of You.mp3',
+              image: './assets/images/shape_of_you.jpg'
+            },
+            {
+              name: 'Señorita',
+              singer: 'Cabello',
+              path: './assets/music/Señorita.mp3',
+              image: './assets/images/senorita.jpg'
+            },
+            {
+              name: 'Unity',
+              singer: 'TheFatRat',
+              path: './assets/music/Unity.mp3',
+              image: './assets/images/unity.jpg'
+            },
+            {
+              name: 'Leemon Tree',
+              singer: 'Kenshi',
+              path: './assets/music/Lemon Tree.mp3',
+              image: './assets/images/lemon_tree.jpg'
+            },
+          ],
+          render: function() {
+            const htmls = this.songs.map((song, index) => {
+              return `
+              <div class="song ${index === this.currentIndex ? 'active' : ''}" data-index="${index}">
+                <div class="thumb" 
+                style="background-image: url('${song.image}')">
+                </div>
+                <div class="body">
+                  <h3 class="title">${song.name}</h3>
+                  <p class="author">${song.singer}</p>
+                </div>
+                <div class="option">
+                  <i class="fas fa-ellipsis-h"></i>
+                </div>
+              </div>
+              `
+            })
+            playlist.innerHTML = htmls.join('')
+          },
+          defineProperties: function() {
+            Object.defineProperty(this, 'currentSong', {
+              get: function() {
+                return this.songs[this.currentIndex]
+              }
+            })
+          },
+          handleEvents: function() {
+            const _this = this
+            const cdWidth = cd.offsetWidth
+
+            // Xử lí rotate / stop
+            const cdThumbAnimate = cdThumb.animate([
+              {transform: 'rotate(360deg)'}
+            ], {
+              duration: 10000,
+              iterations: Infinity
+            })
+            cdThumbAnimate.pause()
+
+            // Xử lí phóng to / thu nhỏ CD
+            document.onscroll = function() {
+              const scrollTop = window.scrollY || document.documentElement.scrollTop
+              const newCdWidth = cdWidth - scrollTop
+
+              cd.style.width = newCdWidth > 0 ? newCdWidth + 'px' : 0
+              cd.style.opacity = newCdWidth / cdWidth
+            }
+
+            // Xử lí khi click play
+            playBtn.onclick = function() {
+              if (_this.isPlaying) {
+                audio.pause()
+              } else {
+                audio.play()
+              }
+            }
+
+            // Khi song được play
+            audio.onplay = function() {
+              _this.isPlaying = true 
+              player.classList.add('playing')
+              cdThumbAnimate.play()
+            }
+            
+            // Khi song bị pause
+            audio.onpause = function() {
+              _this.isPlaying = false 
+              player.classList.remove('playing')
+              cdThumbAnimate.pause()
+            }
+
+            // Khi tiến độ bài hát thay đổi 
+            audio.ontimeupdate = function() {
+              if (audio.duration) {
+                const progressPercent = Math.floor(audio.currentTime / audio.duration * 100)
+                progress.value = progressPercent
+              }
+            }
+
+            // Xử lí khi tua song  
+            progress.onchange = function(e) {
+              const seekTime = audio.duration / 100 * e.target.value
+              audio.currentTime = seekTime
+            }
+
+            // Khi next song
+            nextBtn.onclick = function() {
+              if (_this.isRandom) {
+                _this.playRandomSong()
+              } else {
+                _this.nextSong()
+              }
+              audio.play()
+              _this.render()
+              _this.scrollToActiveSong()
+            }
+
+            // Khi prev song
+            prevBtn.onclick = function() {
+              if (_this.isRandom) {
+                _this.playRandomSong()
+              } else {
+                _this.prevSong()
+              }
+              audio.play()
+              _this.render()
+              _this.scrollToActiveSong()
+            }
+
+            // Khi ấn random
+            randomBtn.onclick = function(e) {
+              _this.isRandom = !_this.isRandom
+              randomBtn.classList.toggle('active', _this.isRandom)
+            }
+
+            // Xử lí phát lại 1 song
+            repeatBtn.onclick = function(e) {
+              _this.isRepeat = !_this.isRepeat
+              repeatBtn.classList.toggle('active', _this.isRepeat)
+            }
+
+            // Xử lí next song khi audio ended
+            audio.onended = function() {
+              if (_this.isRepeat) {
+                audio.play()
+              } else {
+                nextBtn.click()
+              }
+            }
+
+            // Lắng nghe hành vi click vào playlist
+            playlist.onclick = function(e) {
+              const songNode = e.target.closest('.song:not(.active)')
+              // xử lí khi click vào song
+              if (songNode || e.target.closest('.option')) {
+
+                if (songNode) {
+                  _this.currentIndex = Number(songNode.dataset.index)
+                  _this.loadCurrentSong()
+                  audio.play()
+                  _this.render()
+                }
+
+              }
+            }
+          },
+          scrollToActiveSong: function() {
+            setTimeout(() => {
+              $('.song.active').scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest'
+              })
+            }, 200)
+          },
+          loadCurrentSong: function() {
+            heading.textContent = this.currentSong.name
+            cdThumb.style.backgroundImage = `url('${this.currentSong.image}')`
+            audio.src = this.currentSong.path
+          },
+          nextSong: function() {
+            this.currentIndex++
+            if (this.currentIndex >= this.songs.length) {
+              this.currentIndex = 0
+            }
+            this.loadCurrentSong()
+          },
+          prevSong: function() {
+            this.currentIndex--
+            if (this.currentIndex < 0) {
+              this.currentIndex = this.songs.length - 1
+            }
+            this.loadCurrentSong()
+          },
+          playRandomSong: function() {
+            let newIndex
+            do {
+              newIndex = Math.floor(Math.random() * this.songs.length)
+            } while (newIndex === this.currentIndex)
+            this.currentIndex = newIndex
+            this.loadCurrentSong()
+          },
+          start: function() {
+            // Định nghĩa các thuộc tính cho object
+            this.defineProperties()
+
+            // Lắng nghe / xử lí các sự kiện (DOM Events)
+            this.handleEvents()
+
+            // Tải thông tin bài hát đầu tiên vào UI khi chạy ứng dụng
+            this.loadCurrentSong()
+
+            // Render playlist
+            this.render()
+          }
+        }
+
+        app.start()
+    </script>
+      <!-- Design from: https://static.collectui.com/shots/3671744/musicloud-revolutionary-app-for-music-streaming-large -->
+      <!-- 
+        MỘT SỐ KIẾN THỰC QUAN TRỌNG CẦN NHỚ VÀ HỌC THÊM 
+        1. documentElement.scrollTop
+        2. Toán tử 3 ngôi "? :"
+        3. defineProperty method
+        4. var, let, const 
+        5. HTML DOM: 
+                method: pause(), play(), click()
+                property: currentTime, duration
+                events: onchange, onclick, ontimeupdate, onpause, onplay, onended.
+        6. Math: floor, toFixed, Random
+        7. JQuery animate method
+        8. scroll interview method
+        9. closet method
+        -->
+
+</body>
+</html>
+
+
